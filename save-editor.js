@@ -3,6 +3,31 @@ const path = require('path');
 const crypto = require('crypto');
 const { isUtf8 } = require('node:buffer');
 const MAX_FILE_BYTES = 64 * 1024 * 1024;
+
+// Layout do contêiner FBCHUNKS observado em saves de carreira do FIFA 17 PC.
+// Estes offsets valem só para este formato: não reutilize em outros FIFAs.
+const CONTAINER_MAGIC = 'FBCHUNKS';
+const TITLE_START = 18; // título interno do save, terminado em byte zero
+const TITLE_AREA_END = 118; // o título termina antes da primeira área de integridade
+const FIRST_NAME_OFFSET = 199; // nome do jogador controlado
+const SURNAME_OFFSET = 276; // sobrenome do jogador controlado
+const NAME_MAX_BYTES = 77;
+// Registro físico duplicado fora dos bancos: ID do jogador, altura e peso (uint32 LE).
+const PHYSICAL_PLAYER_ID_OFFSET = 1390;
+const PHYSICAL_HEIGHT_OFFSET = 1406;
+const PHYSICAL_WEIGHT_OFFSET = 1410;
+const PHYSICAL_RECORD_END = 1414; // também é o menor tamanho de save aceito
+// Áreas [offset, tamanho] zeradas ao gravar; não são os CRCs internos dos bancos.
+const CONTAINER_INTEGRITY_AREAS = [
+  [118, 32],
+  [218, 16],
+  [1142, 16]
+];
+const LIMITS = {
+  height: { min: 130, max: 215 },
+  weight: { min: 30, max: 150 },
+  attribute: { min: 1, max: 99 }
+};
 // Este módulo não depende do Electron: recebe caminhos/valores e devolve dados.
 // A interface nunca deve gravar bytes diretamente; use applySave/restoreBackup.
 function fingerprint(bytes) {
@@ -10,7 +35,12 @@ function fingerprint(bytes) {
 }
 function readBounded(filePath) {
   const stat = fs.lstatSync(filePath);
-  if (!stat.isFile() || stat.isSymbolicLink() || stat.size > MAX_FILE_BYTES || stat.size < 1414)
+  if (
+    !stat.isFile() ||
+    stat.isSymbolicLink() ||
+    stat.size > MAX_FILE_BYTES ||
+    stat.size < PHYSICAL_RECORD_END
+  )
     throw new Error('Save inválido ou tamanho não suportado.');
   const bytes = fs.readFileSync(filePath);
   if (bytes.length > MAX_FILE_BYTES) throw new Error('Arquivo cresceu durante a leitura.');
@@ -240,12 +270,8 @@ function refreshCrcs(buffer, sections) {
 function invalidateContainerIntegrity(buffer, firstDatabaseOffset) {
   // Regra observada no contêiner FIFA 17. Não generalizar estes offsets para
   // outra versão: eles não são os CRCs internos calculados acima.
-  if (buffer.subarray(0, 8).toString('ascii') !== 'FBCHUNKS') return;
-  for (const [offset, length] of [
-    [118, 32],
-    [218, 16],
-    [1142, 16]
-  ]) {
+  if (buffer.subarray(0, 8).toString('ascii') !== CONTAINER_MAGIC) return;
+  for (const [offset, length] of CONTAINER_INTEGRITY_AREAS) {
     if (offset + length > firstDatabaseOffset)
       throw new Error('A área de integridade do save se sobrepõe ao banco de dados.');
     buffer.fill(0, offset, offset + length);
@@ -322,11 +348,7 @@ function locate(filePath) {
   throw new Error('O jogador controlado não foi encontrado na tabela de jogadores.');
 }
 function fieldLimits(name) {
-  return name === 'height'
-    ? { min: 130, max: 215 }
-    : name === 'weight'
-      ? { min: 30, max: 150 }
-      : { min: 1, max: 99 };
+  return Object.hasOwn(LIMITS, name) ? LIMITS[name] : LIMITS.attribute;
 }
 function inspectSave(filePath) {
   // Somente leitura. O fingerprint representa o conteúdo carregado e permite
@@ -346,7 +368,7 @@ function inspectSave(filePath) {
   // Remove bytes de controle que sobram no campo de nome.
   const stringAt = (offset) => {
     const end = x.file.indexOf(0, offset);
-    return end >= offset && end < offset + 77
+    return end >= offset && end < offset + NAME_MAX_BYTES
       ? x.file
           .subarray(offset, end)
           .toString('utf8')
@@ -355,8 +377,8 @@ function inspectSave(filePath) {
           .trim()
       : '';
   };
-  const firstName = stringAt(199),
-    surname = stringAt(276);
+  const firstName = stringAt(FIRST_NAME_OFFSET),
+    surname = stringAt(SURNAME_OFFSET);
   return {
     filePath,
     playerId: x.playerId,
@@ -369,11 +391,15 @@ function inspectSave(filePath) {
   };
 }
 function readSaveTitle(buffer) {
-  const end = buffer.indexOf(0, 18);
-  if (buffer.subarray(0, 8).toString('ascii') !== 'FBCHUNKS' || end < 18 || end >= 118) {
+  const end = buffer.indexOf(0, TITLE_START);
+  if (
+    buffer.subarray(0, 8).toString('ascii') !== CONTAINER_MAGIC ||
+    end < TITLE_START ||
+    end >= TITLE_AREA_END
+  ) {
     throw new Error('Nome interno do save não reconhecido.');
   }
-  const bytes = buffer.subarray(18, end);
+  const bytes = buffer.subarray(TITLE_START, end);
   // Some FIFA 17 titles use UTF-8, others Latin-1. Preserve the detected encoding on write.
   const encoding = isUtf8(bytes) ? 'utf8' : 'latin1';
   return { end, encoding, text: bytes.toString(encoding) };
@@ -388,8 +414,8 @@ function markEditedName(buffer) {
     original = title.text;
   const nameEnd = title.end;
   let allocationEnd = nameEnd + 1;
-  while (allocationEnd < 118 && buffer[allocationEnd] === 0) allocationEnd++;
-  const capacity = allocationEnd - 18 - 1;
+  while (allocationEnd < TITLE_AREA_END && buffer[allocationEnd] === 0) allocationEnd++;
+  const capacity = allocationEnd - TITLE_START - 1;
   if (capacity < 7) throw new Error('Não há espaço seguro para identificar o save como EDITADO.');
   const base = original.replace(/^(?:Carreira|Career)\s*-\s*/i, '').replace(/^EDITADO\s*/i, '');
   let name = '';
@@ -398,22 +424,28 @@ function markEditedName(buffer) {
     name += character;
   }
   name = name.trim();
-  buffer.fill(0, 18, allocationEnd);
-  buffer.write(name, 18, title.encoding);
+  buffer.fill(0, TITLE_START, allocationEnd);
+  buffer.write(name, TITLE_START, title.encoding);
   return name;
 }
 // Registro físico duplicado, observado em carreiras do FIFA 17 PC.
 // A assinatura, o ID e os intervalos são obrigatórios para usar estes offsets.
 function readPhysicalRecord(x) {
   if (
-    x.file.subarray(0, 8).toString('ascii') !== 'FBCHUNKS' ||
-    x.sections[0].start <= 1414 ||
-    x.file.readUInt32LE(1390) !== x.playerId
+    x.file.subarray(0, 8).toString('ascii') !== CONTAINER_MAGIC ||
+    x.sections[0].start <= PHYSICAL_RECORD_END ||
+    x.file.readUInt32LE(PHYSICAL_PLAYER_ID_OFFSET) !== x.playerId
   )
     return null;
-  const height = x.file.readUInt32LE(1406),
-    weight = x.file.readUInt32LE(1410);
-  if (height < 130 || height > 215 || weight < 30 || weight > 150) return null;
+  const height = x.file.readUInt32LE(PHYSICAL_HEIGHT_OFFSET),
+    weight = x.file.readUInt32LE(PHYSICAL_WEIGHT_OFFSET);
+  if (
+    height < LIMITS.height.min ||
+    height > LIMITS.height.max ||
+    weight < LIMITS.weight.min ||
+    weight > LIMITS.weight.max
+  )
+    return null;
   return { height, weight };
 }
 function buildPatchedSave(filePath, values) {
@@ -429,8 +461,8 @@ function buildPatchedSave(filePath, values) {
   if (inputErrors.length)
     throw new Error('O save já apresenta erro de integridade. Restaure um backup válido.');
   for (const [name, offset] of [
-    ['height', 1406],
-    ['weight', 1410]
+    ['height', PHYSICAL_HEIGHT_OFFSET],
+    ['weight', PHYSICAL_WEIGHT_OFFSET]
   ]) {
     if (!(name in values)) continue;
     if (!readPhysicalRecord(x) || !x.fields[name])

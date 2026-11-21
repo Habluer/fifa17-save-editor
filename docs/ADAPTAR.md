@@ -17,7 +17,7 @@ O contêiner `FBCHUNKS` contém bancos com assinatura `DB`. Tabelas e campos usa
 
 `dbSections` valida limites; `locate` encontra o jogador pelo ID da carreira, sem fixar um ID de personagem. O CRC usado é CRC-32/MPEG-2 (polinômio `0x04C11DB7`, inicial `0xFFFFFFFF`, sem reflexão nem XOR final). `refreshCrcs` atualiza cabeçalhos, diretório e corpos das tabelas.
 
-Altura e peso também aparecem em um registro físico fora dos bancos. `readPhysicalRecord` confere assinatura, ID e intervalos antes de aceitar os offsets 1406/1410. Alterar somente a tabela pode não produzir efeito no jogo. O título e as áreas de integridade do contêiner também têm regras próprias: veja `readSaveTitle`, `markEditedName` e `invalidateContainerIntegrity`.
+Altura e peso também aparecem em um registro físico fora dos bancos. `readPhysicalRecord` confere assinatura, ID e intervalos antes de aceitar os offsets 1406/1410. Todos os offsets fixos do contêiner estão reunidos como constantes no início de `save-editor.js`. Alterar somente a tabela pode não produzir efeito no jogo. O título e as áreas de integridade do contêiner também têm regras próprias: veja `readSaveTitle`, `markEditedName` e `invalidateContainerIntegrity`.
 
 ## Para outro FIFA
 
