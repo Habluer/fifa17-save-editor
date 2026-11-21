@@ -2,7 +2,7 @@ name: Build Windows app
 
 on:
   push:
-    tags: ["v*"]
+    tags: ['v*']
 
 permissions:
   contents: write

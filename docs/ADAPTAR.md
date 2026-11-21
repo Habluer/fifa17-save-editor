@@ -2,14 +2,14 @@
 
 ## Onde mexer
 
-| Arquivo | Responsabilidade |
-| --- | --- |
-| `save-editor.js` | Formato FIFA 17, leitura binária, campos, CRCs, edição e backups |
-| `attributes.js` | Nomes, explicações, grupos e atributos permitidos no lote |
-| `main.js` | Janela Electron, seletor nativo e operações de arquivo autorizadas |
-| `preload.js` | API limitada entre a interface e o processo principal |
-| `renderer.js`, `index.html`, `style.css` | Interface, valores ainda não salvos e confirmação |
-| `save-folder.js` | Preferência local de pasta; não contém nem copia os saves |
+| Arquivo                                  | Responsabilidade                                                   |
+| ---------------------------------------- | ------------------------------------------------------------------ |
+| `save-editor.js`                         | Formato FIFA 17, leitura binária, campos, CRCs, edição e backups   |
+| `attributes.js`                          | Nomes, explicações, grupos e atributos permitidos no lote          |
+| `main.js`                                | Janela Electron, seletor nativo e operações de arquivo autorizadas |
+| `preload.js`                             | API limitada entre a interface e o processo principal              |
+| `renderer.js`, `index.html`, `style.css` | Interface, valores ainda não salvos e confirmação                  |
+| `save-folder.js`                         | Preferência local de pasta; não contém nem copia os saves          |
 
 ## O que é específico do FIFA 17
 
