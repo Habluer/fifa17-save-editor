@@ -5,15 +5,23 @@
   "author": "Habluer",
   "private": true,
   "main": "main.js",
-  "engines": { "node": ">=22.12.0" },
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "overrides": {
-    "@electron/asar": { ".": "4.3.1", "glob": "14.0.3" },
+    "@electron/asar": {
+      ".": "4.3.1",
+      "glob": "14.0.3"
+    },
     "@electron/universal": "3.0.6",
     "minimatch": "11.0.3"
   },
   "scripts": {
     "start": "electron .",
     "test": "node --test",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test:integration": "node --test test/integration.local.test.js",
     "test:ui": "electron scripts/ui-smoke.cjs",
     "benchmark": "node scripts/benchmark.cjs",
@@ -21,8 +29,12 @@
     "dist": "electron-builder --win zip"
   },
   "devDependencies": {
+    "@eslint/js": "10.0.1",
     "electron": "45.2.1",
-    "electron-builder": "26.18.0"
+    "electron-builder": "26.18.0",
+    "eslint": "10.15.0",
+    "globals": "17.14.0",
+    "prettier": "3.10.1"
   },
   "build": {
     "appId": "local.fifa17.saveeditor",

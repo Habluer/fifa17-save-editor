@@ -16,14 +16,20 @@ for (const encoding of ['utf8', 'latin1']) {
       const end = bytes.indexOf(0, 18);
       const title = Buffer.from('Carreira - José', encoding);
       assert.ok(title.length <= end - 18);
-      bytes.fill(0,18,end + 1); title.copy(bytes,18);
-      fs.writeFileSync(input,bytes);
-      assert.equal(inspectSave(input).saveName,'Carreira - José');
-      const result = patchSave(input,{ agility:90 });
-      assert.equal(inspectSave(result.edited).saveName,'EDITADO José');
-      assert.deepEqual(fs.readFileSync(input),bytes);
+      bytes.fill(0, 18, end + 1);
+      title.copy(bytes, 18);
+      fs.writeFileSync(input, bytes);
+      assert.equal(inspectSave(input).saveName, 'Carreira - José');
+      const result = patchSave(input, { agility: 90 });
+      assert.equal(inspectSave(result.edited).saveName, 'EDITADO José');
+      assert.deepEqual(fs.readFileSync(input), bytes);
       const edited = fs.readFileSync(result.edited);
-      assert.deepEqual(edited.subarray(18,18 + Buffer.byteLength('EDITADO José',encoding)),Buffer.from('EDITADO José',encoding));
-    } finally { fs.rmSync(directory,{ recursive:true, force:true }); }
+      assert.deepEqual(
+        edited.subarray(18, 18 + Buffer.byteLength('EDITADO José', encoding)),
+        Buffer.from('EDITADO José', encoding)
+      );
+    } finally {
+      fs.rmSync(directory, { recursive: true, force: true });
+    }
   });
 }

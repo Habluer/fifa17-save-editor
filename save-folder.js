@@ -9,17 +9,23 @@ function folderPreference(file) {
       const stored = JSON.parse(fs.readFileSync(file, 'utf8')).saveFolder;
       if (typeof stored === 'string' && path.isAbsolute(stored)) directory = stored;
     }
-  } catch { /* Missing or invalid preferences prompt a fresh choice. */ }
+  } catch {
+    /* Missing or invalid preferences prompt a fresh choice. */
+  }
   return {
     get: () => directory,
     usable: () => {
-      try { return Boolean(directory && fs.statSync(directory).isDirectory()); }
-      catch { return false; }
+      try {
+        return Boolean(directory && fs.statSync(directory).isDirectory());
+      } catch {
+        return false;
+      }
     },
     set(value) {
-      if (typeof value !== 'string' || !path.isAbsolute(value) || !fs.statSync(value).isDirectory()) throw new Error('Selecione uma pasta válida.');
-      fs.mkdirSync(path.dirname(file), { recursive:true });
-      fs.writeFileSync(file, JSON.stringify({ saveFolder:value }), { mode:0o600 });
+      if (typeof value !== 'string' || !path.isAbsolute(value) || !fs.statSync(value).isDirectory())
+        throw new Error('Selecione uma pasta válida.');
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      fs.writeFileSync(file, JSON.stringify({ saveFolder: value }), { mode: 0o600 });
       directory = value;
     }
   };

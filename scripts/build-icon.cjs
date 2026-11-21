@@ -8,7 +8,7 @@ app.whenReady().then(() => {
     const source = nativeImage.createFromPath(path.join(directory, 'icon.png'));
     if (source.isEmpty()) throw new Error('Imagem do ícone não encontrada.');
     const sizes = [16, 24, 32, 48, 64, 128, 256];
-    const frames = sizes.map(size => source.resize({ width:size, height:size, quality:'best' }).toPNG());
+    const frames = sizes.map((size) => source.resize({ width: size, height: size, quality: 'best' }).toPNG());
     const header = Buffer.alloc(6 + sizes.length * 16);
     header.writeUInt16LE(1, 2);
     header.writeUInt16LE(sizes.length, 4);
@@ -25,5 +25,8 @@ app.whenReady().then(() => {
     fs.writeFileSync(path.join(directory, 'icon.ico'), Buffer.concat([header, ...frames]));
     console.log(`ICO: ${sizes.join(', ')} px.`);
     app.exit(0);
-  } catch (error) { console.error(error); app.exit(1); }
+  } catch (error) {
+    console.error(error);
+    app.exit(1);
+  }
 });

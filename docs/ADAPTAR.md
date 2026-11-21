@@ -2,14 +2,14 @@
 
 ## Onde mexer
 
-| Arquivo | Responsabilidade |
-| --- | --- |
-| `save-editor.js` | Formato FIFA 17, leitura binária, campos, CRCs, edição e backups |
-| `attributes.js` | Nomes, explicações, grupos e atributos permitidos no lote |
-| `main.js` | Janela Electron, seletor nativo e operações de arquivo autorizadas |
-| `preload.js` | API limitada entre a interface e o processo principal |
-| `renderer.js`, `index.html`, `style.css` | Interface, valores ainda não salvos e confirmação |
-| `save-folder.js` | Preferência local de pasta; não contém nem copia os saves |
+| Arquivo                                  | Responsabilidade                                                   |
+| ---------------------------------------- | ------------------------------------------------------------------ |
+| `save-editor.js`                         | Formato FIFA 17, leitura binária, campos, CRCs, edição e backups   |
+| `attributes.js`                          | Nomes, explicações, grupos e atributos permitidos no lote          |
+| `main.js`                                | Janela Electron, seletor nativo e operações de arquivo autorizadas |
+| `preload.js`                             | API limitada entre a interface e o processo principal              |
+| `renderer.js`, `index.html`, `style.css` | Interface, valores ainda não salvos e confirmação                  |
+| `save-folder.js`                         | Preferência local de pasta; não contém nem copia os saves          |
 
 ## O que é específico do FIFA 17
 
@@ -17,7 +17,7 @@ O contêiner `FBCHUNKS` contém bancos com assinatura `DB`. Tabelas e campos usa
 
 `dbSections` valida limites; `locate` encontra o jogador pelo ID da carreira, sem fixar um ID de personagem. O CRC usado é CRC-32/MPEG-2 (polinômio `0x04C11DB7`, inicial `0xFFFFFFFF`, sem reflexão nem XOR final). `refreshCrcs` atualiza cabeçalhos, diretório e corpos das tabelas.
 
-Altura e peso também aparecem em um registro físico fora dos bancos. `readPhysicalRecord` confere assinatura, ID e intervalos antes de aceitar os offsets 1406/1410. Alterar somente a tabela pode não produzir efeito no jogo. O título e as áreas de integridade do contêiner também têm regras próprias: veja `readSaveTitle`, `markEditedName` e `invalidateContainerIntegrity`.
+Altura e peso também aparecem em um registro físico fora dos bancos. `readPhysicalRecord` confere assinatura, ID e intervalos antes de aceitar os offsets 1406/1410. Todos os offsets fixos do contêiner estão reunidos como constantes no início de `save-editor.js`. Alterar somente a tabela pode não produzir efeito no jogo. O título e as áreas de integridade do contêiner também têm regras próprias: veja `readSaveTitle`, `markEditedName` e `invalidateContainerIntegrity`.
 
 ## Para outro FIFA
 
