@@ -1,6 +1,6 @@
 # FIFA 17 Career Editor
 
-[![Release](https://img.shields.io/github/v/release/Habluer/fifa17-save-editor?label=download)](https://github.com/Habluer/fifa17-save-editor/releases/latest)
+[![Release](https://img.shields.io/github/v/release/Habluer/fifa17-save-editor?label=download&display_name=tag)](https://github.com/Habluer/fifa17-save-editor/releases/latest)
 [![Testes](https://github.com/Habluer/fifa17-save-editor/actions/workflows/ci.yml/badge.svg)](https://github.com/Habluer/fifa17-save-editor/actions/workflows/ci.yml)
 [![Licença MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-blue)](LICENSE)
 ![Windows](https://img.shields.io/badge/Windows-x64-0078D4)
